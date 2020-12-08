@@ -113,8 +113,59 @@ act_g1 + geom_bar(stat = "identity") +
 
 # Distancia y precio
 
-summary(df_inf_vial$Costo)
+df_inf_vial <- df_inf_vial %>% 
+  mutate(
+    DistanciaIntervalos = case_when(
+      is.na(Distancia) ~ NA_real_,
+      Distancia >= 0 & Distancia < 1000 ~ 1,#"Entre 0 y 5mts",
+      Distancia >= 1000 & Distancia < 10000 ~ 2,#"Entre 5mts y 1km",
+      Distancia >= 10000 & Distancia < 100000 ~ 4,#"Entre 5km y 10km",
+      Distancia >= 100000 & Distancia < 500000 ~ 5,#"Entre 10km y 50km",
+      Distancia >= 500000 ~ 6,#"más de 50km",
+      TRUE ~ NA_real_
+    )
+  )
+
+df_inf_vial <- df_inf_vial %>% 
+  mutate(
+    CostoIntervalos = case_when(
+      is.na(Costo) ~ NA_real_,
+      Costo >= 0 & Costo < 1000 ~ 1,#"Entre 0 y 5mts",
+      Costo >= 1000 & Costo < 10000 ~ 2,#"Entre 5mts y 1km",
+      Costo >= 10000 & Costo < 100000 ~ 4,#"Entre 5km y 10km",
+      Costo >= 100000 & Costo < 500000 ~ 5,#"Entre 10km y 50km",
+      Costo >= 500000 ~ 6,#"más de 50km",
+      TRUE ~ NA_real_
+    )
+  )
+
+# Distancia
+
+df_inf_vial$DistanciaIntervalos <- as.factor(df_inf_vial$DistanciaIntervalos)
+levels(df_inf_vial$DistanciaIntervalos) <- c("Entre 0 y 1km",
+                                         "Entre 1km y 10km",
+                                         "Entre 10km y 100km",
+                                         "Entre 100km y 500km",
+                                         "Mas de 500km")
+
+df_inf_vial[, "Tramo"] <- df_hogares[, "Nombre"]
+
+bar_dista <- ggplot(df_inf_vial[!is.na(df_inf_vial$DistanciaIntervalos), ], aes(x = DistanciaIntervalos, fill = Tramo))
+bar_dista + geom_bar(position = "dodge") + ylab("Número de hogares") + xlab("Distancia")
+
+resumen_inf_vial <- df_inf_vial %>% group_by(Tramo, DistanciaIntervalos) %>% count() %>%  mutate(Porcentaje = n/nrow(df_inf_vial))
 
 
-boxplot(df_inf_vial$Costo, ylim = c(0, 100000))
-boxplot(df_inf_vial$Distancia, ylim = c(0, 8000))
+# Costo
+
+df_inf_vial$CostoIntervalos <- as.factor(df_inf_vial$CostoIntervalos)
+levels(df_inf_vial$CostoIntervalos) <- c("Entre 0 y 1km",
+                                         "Entre 1km y 10km",
+                                         "Entre 10km y 100km",
+                                         "Entre 100km y 500km",
+                                         "Mas de 500km")
+
+df_inf_vial[, "Tramo"] <- df_hogares[, "Nombre"]
+
+bar_costo <- ggplot(df_inf_vial[!is.na(df_inf_vial$CostoIntervalos), ], aes(x = CostoIntervalos, fill = Tramo))
+bar_costo + geom_bar(position = "dodge") + ylab("Número de hogares") + xlab("Distancia")
