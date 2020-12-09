@@ -535,3 +535,7 @@ boxplot(autoconsumo, ylim = c(0, 400000))
 hist(autoconsumo, xlim = c(0, 1000000), bbreaks = 15)
 
 autoconsumo %>% summary()
+
+ingresos$Total_mas_autoconsumo <- ingresos$Total+autoconsumo
+
+ingresos
