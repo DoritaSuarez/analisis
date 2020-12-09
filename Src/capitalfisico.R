@@ -367,14 +367,123 @@ graficos_binarios <- function(df_graph, nombres_gra, tramo = T, cat, xlab_grap, 
   names(resumen_df_graph)[2] <- cat
   
   
-  act_g1 <- ggplot(resumen_df_graph, aes(x = variable, y = porcentaje*100, fill =!!sym(cat)))
-  act_g1 + geom_bar(stat = "identity") +
+  act_g1 <- ggplot(resumen_df_graph, aes(x = reorder(variable, -porcentaje), y = porcentaje*100, fill =!!sym(cat)))+
+   geom_bar(stat = "identity") +
     xlab(xlab_grap) +
     ylab("Porcentaje") +
     scale_fill_manual(cat, values = c("No" = "#8CBD0E", "Si" = "#005117")) + coord_flip()
+  
+  return( list(resumen = resumen_df_graph, graph = act_g1))
 }
 
 df_orig_p <- df_asociaciones[df_hogares$P38 == 1,]
 df_grap <- df_orig_p[, 1:6]
-nombres <- c("Acceso a insumos", "Acceso a centros de acopio", "Acceso a ayuda técnica", "Acceso a transporte", "Facilidades de comercializacion")
-graficos_binarios(df_grap, nombres, cat = "Beneficios", "porcentaje", "Acceso a beneficios", df_orig = df_orig_p)
+nombres <- c("Acceso a recursos económicos", "Acceso a insumos", "Acceso a centros de acopio", "Acceso a ayuda técnica", "Acceso a transporte", "Facilidades de comercializacion")
+beneficios <- graficos_binarios(df_grap, nombres, cat = "Beneficios", "porcentaje", "Acceso a beneficios", df_orig = df_orig_p)
+
+## asociaciones comunitarias
+
+df_orig_p <- df_asociaciones[df_hogares$P39 == 1,]
+df_grap <- df_orig_p[, 1:6]
+nombres <- c("Acceso a recursos económicos", "Acceso a insumos", "Acceso a centros de acopio", "Acceso a ayuda técnica", "Acceso a transporte", "Facilidades de comercializacion")
+beneficios <- graficos_binarios(df_grap, nombres, cat = "Beneficios", "porcentaje", "Acceso a beneficios", df_orig = df_orig_p)
+
+wordcloud_graph(c(df_hogares$P39C1, df_hogares$P39C2, df_hogares$P39C3), 300)
+
+# Insumos de actividades productivas
+
+df_hogares$P45 %>% table() %>% prop.table()
+
+df_insumos <- df_hogares %>% select(starts_with("P45"))
+df_insumos[, "Tramo"] <- df_hogares[, "Nombre"]
+
+df_insumos_grap <- df_insumos[df_hogares$P45 == 1,]
+df_grap <- df_insumos_grap[, -c(1, 11)]
+nombres <- c("Semillas resistentes a sequias/inundaciones", "Semillas no resistentes", "Abono orgánico", "Abono químico", "Plaguicidas orgánicos", "Plaguicidas químicos", "Fungicidas orgánicos", "Fungicidas químicos", "Insumos para actividades no agrícolas")
+
+insumosG <- graficos_binarios(df_grap, nombres, cat = "Insumo", "porcentaje", "Tipo de insumo", df_orig = df_insumos_grap)
+
+
+# Acceso a las semillas
+
+df_hogares$P46 %>% table() %>% prop.table()
+
+df_semillas <- df_hogares %>% select(starts_with("P46"))
+df_semillas[, "Tramo"] <- df_hogares[, "Nombre"]
+
+df_semillas_grap <- df_semillas[df_hogares$P46 == 1,]
+df_grap <- df_semillas_grap[, -c(1, 7, 8)]
+nombres <- c("Trueque", "Intercambio por semillas", "Las produce usted mismo", "Las obtiene de vecinos o familiares", "intercambio por producto")
+
+semillasG <- graficos_binarios(df_grap, nombres, cat = "Insumo", "porcentaje", "Tipo de insumo", df_orig = df_semillas_grap)
+semillasG$resumen
+semillasG$graph
+
+# Acceso a las semillas resistentes
+
+df_hogares$P47 %>% table() %>% prop.table()
+
+df_semillas <- df_hogares %>% select(starts_with("P47"))
+df_semillas[, "Tramo"] <- df_hogares[, "Nombre"]
+
+df_semillas_grap <- df_semillas[df_hogares$P47 == 1,]
+df_grap <- df_semillas_grap[, -c(1, 7, 8)]
+nombres <- c("Trueque", "Intercambio por semillas", "Las produce usted mismo", "Las obtiene de vecinos o familiares", "intercambio por producto")
+
+semillasG <- graficos_binarios(df_grap, nombres, cat = "Insumo", "porcentaje", "Tipo de insumo", df_orig = df_semillas_grap)
+semillasG$resumen
+semillasG$graph
+
+df_semillas$P471OTHER %>% table()
+
+# Abonos vegetales
+
+df_hogares$P48 %>% table() %>% prop.table()
+
+df_abonos <- df_hogares %>% select(starts_with("P48"))
+df_abonos[, "Tramo"] <- df_hogares[, "Nombre"]
+
+df_abonos_grap <- df_abonos[df_hogares$P48 == 1,]
+df_grap <- df_abonos_grap[, -c(1, 6)]
+nombres <- c("Realiza su compostaje", "Otra manera", "Otro proceso")
+
+abonosG <- graficos_binarios(df_grap, nombres, cat = "Abono", "porcentaje", "Tipo de abono", df_orig = df_abonos_grap)
+semillasG$resumen
+semillasG$graph
+
+df_semillas$P471OTHER %>% table()
+
+# Abonos animales
+
+df_hogares$P49 %>% table() %>% prop.table()
+
+df_abonos <- df_hogares %>% select(starts_with("P49"))
+df_abonos[, "Tramo"] <- df_hogares[, "Nombre"]
+
+df_abonos_grap <- df_abonos[df_hogares$P49 == 1,]
+
+df_abonos_grap$P4901 %>% table() %>% prop.table()
+
+df_grap <- df_abonos_grap[, -c(1, 5, 6)]
+nombres <- c("Utiliza los residuos", "Realiza procesos de compostaje", "Otro proceso")
+
+abonosG <- graficos_binarios(df_grap, nombres, cat = "Abono", "porcentaje", "Tipo de abono", df_orig = df_abonos_grap)
+semillasG$resumen
+semillasG$graph
+
+df_semillas$P471OTHER %>% table()
+
+
+# Recursos del entorno
+
+df_hogares$P501 %>% transformacion_faltantes() %>%  table() %>% prop.table()
+
+df_entorno <- df_hogares %>% select(starts_with("P50"))
+df_entornoG <- df_entorno[, c(1:4)]
+nombres <- c("Lodo o sedimento", "Suelo de rio", "Otros que no compra", "Ninguno")
+
+entornoG <- graficos_binarios(df_entornoG, nombres, cat = "Recursos del entorno", "porcentaje", "Tipo de recurso", df_orig = df_hogares)
+entornoG$resumen
+entornoG$graph
+
+df_semillas$P471OTHER %>% table()
