@@ -1,7 +1,6 @@
 # Librerias
 library(ggplot2)
 library(dplyr)
-library(DataExplorer)
 library(plotly)
 library(tidyverse)
 library(FactoMineR)
@@ -11,6 +10,7 @@ library(ade4)
 library(FactoClass)
 library(factoextra)
 library(reshape2)
+library(tidyr)
 # Text Mining
 library("tm")
 library("SnowballC")
@@ -146,7 +146,7 @@ createBarPlot(df_gastos, "gastos_mes_hogar")
   
 Cstack_info()
 
-create_barplot_tramo <- function(df_datos, var_plot, var_cat="tramo", xlab, ylab) {
+create_barplot_categories <- function(df_datos, var_plot, var_cat, var_cat_name, xlab, ylab) {
   df_datos %>% 
     as_tibble() %>% 
     filter(!is.na(!!sym(var_plot))) %>% 
@@ -157,7 +157,7 @@ create_barplot_tramo <- function(df_datos, var_plot, var_cat="tramo", xlab, ylab
       scale_y_continuous(limits = c(0,2100))+
       coord_flip()+
       scale_fill_manual(values=c("#005117", "#8CBD0E", "#5ABCB9"), 
-                      name="Tramo")+
+                      name=var_cat_name)+
       theme(panel.background = element_rect(fill = "gray97",
                                           colour = "gray97",
                                           size = 0.5, linetype = "solid"),
@@ -167,7 +167,7 @@ create_barplot_tramo <- function(df_datos, var_plot, var_cat="tramo", xlab, ylab
                                           colour = "white"))
 }
 
-create_barplot_tramo(df_gastos, "gastos_mes_hogar", xlab = "Gastos mensuales del hogar", ylab = "Número de hogares")
+create_barplot_categories(df_gastos, "gastos_mes_hogar", "tramo", "Tramo", xlab = "Gastos mensuales del hogar", ylab = "Número de hogares")
 
 
 
@@ -203,6 +203,76 @@ df_cuotas %>%
 
 table(df_cuotas$P55) %>% prop.table()
 
-## Interpretación: Aproximadamente el 82% de los hogares encuestados no pueden acceder a créditos.
+## Interpretación: Aproximadamente el 82% de los hogares encuestados no tienen acceso a créditos.
+
+df_cuotas %>% 
+  filter(!is.na(P5501)) %>% 
+  mutate(P5501 = factor(P5501, labels=c("Si",'No'))) %>% 
+  ggplot(aes(P5501))+
+  geom_bar(col = "#005117")
+
+table(df_cuotas$P5501) %>% prop.table()
+
+## Del 18% que sí tiene acceso a créditos, actualmente el 70% hace uso de algún crédito para desempeñar su actividad productiva
 
 
+graficos_binarios <- function(df_graph, nombres_gra, tramo = T, cat, xlab_grap, ylab_grap, df_orig){
+  names(df_graph) <- nombres_gra
+  
+  for(i in 1:ncol(df_graph)){
+    df_graph[, i] <- transformacion_faltantes(df_graph[, i] %>% unlist() %>% as.numeric())
+  }
+  
+  df_graph[, "Tramo"] <- df_orig[, "Tramo"]
+  df_graph <- df_graph %>% melt("Tramo") %>% data_frame()
+  df_graph$value <- as.factor(df_graph$value)
+  levels(df_graph$value) <- c("No", "Si")
+  
+  resumen_df_graph <- df_graph %>% group_by(variable, value) %>% 
+    summarise(conteo = n()) %>% 
+    mutate(porcentaje = conteo/sum(conteo)) %>% 
+    arrange(porcentaje, variable)
+  
+  resumen_df_graph <- na.omit(resumen_df_graph)
+  
+  names(resumen_df_graph)[2] <- cat
+  
+  
+  act_g1 <- ggplot(resumen_df_graph, aes(x = variable, y = porcentaje*100, fill =!!sym(cat)))
+  act_g1 + geom_bar(stat = "identity") +
+    xlab(xlab_grap) +
+    ylab("Porcentaje") +
+    scale_fill_manual(cat, values = c("No" = "#8CBD0E", "Si" = "#005117")) + coord_flip()
+}
+
+
+table(df_cuotas$P5501)[[1]]
+
+df_cuotas %>% 
+  select(c("P550101A","P550101B","P550101C","P550101D")) %>% 
+  `colnames<-`(c("Banco privado", "Estado", "Persona natural", "Almacen")) %>% 
+  mutate_all(as.integer) %>% 
+  summarise_all(sum, na.rm = TRUE) %>% 
+  pivot_longer(
+    cols = everything(),
+    names_to = 'acreedor',
+    names_prefix = "acre",
+    values_to = "num_deudores",
+    values_drop_na = TRUE
+  ) %>% 
+  mutate(
+    porcentaje=num_deudores/table(df_cuotas$P5501)[[1]]
+  ) %>% 
+  ggplot(aes(x=reorder(acreedor, -porcentaje), y=porcentaje))+
+    geom_bar( stat = "identity", position = "fill", fill = "#8CBD0E")+
+    geom_bar( stat = "identity", fill='#005117')+
+    geom_text(aes(label = round(porcentaje,2)), stat = "identity", vjust = 0.5,hjust = 2, colour = "white",position =  position_dodge(.9), size=2.7)+  
+    labs(x='Acreedor', y='Porcentaje')+
+    scale_y_continuous(labels = scales::percent_format())+
+    coord_flip()
+
+
+
+create_barplot_binaries <- function(df_datos, var_plot, var_cat, var_cat_name, xlab, ylab) {
+    
+}
