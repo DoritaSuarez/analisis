@@ -82,10 +82,10 @@ df_gastos <- df_gastos %>%  mutate(
 
 df_gastos$gastos_mes_hogar <- as.factor(df_gastos$gastos_mes_hogar)
 levels(df_gastos$gastos_mes_hogar) <- c("Entre $0 y $100.000",
-                                             "Entre $100.000 y $200.000",
-                                             "Entre $200.000 y $500.000",
-                                             "Entre $500.000 y $1'000.000",
-                                             "Entre $1'000.000 y $2'000.000",
+                                             "Entre $100.000\ny $200.000",
+                                             "Entre $200.000\ny $500.000",
+                                             "Entre $500.000\ny $1'000.000",
+                                             "Entre $1'000.000\ny $2'000.000",
                                              "Mas de $2'000.000")
 
 df_gastos %>% 
@@ -100,10 +100,109 @@ df_gastos %>%
 df_gastos$tramo <- df_hogares$Nombre
 
 df_gastos %>% 
-  dplyr::filter(!is.na(gastos_mes_hogar)) %>% 
+  dplyr::filter(!is.na(get("gastos_mes_hogar"))) %>% 
   ggplot(aes(gastos_mes_hogar, fill=tramo))+
   geom_bar(col = "#005117", position = "dodge")+
-  geom_text( aes(label = paste0(round(..count..*100/length(df_gastos$gastos_mes_hogar)),"%"),digits=3), stat = "count", vjust = 0.5,hjust = -0.4, colour = "black",position =  position_dodge(.9))+  
+  geom_text( aes(label = paste0(round(..count..*100/length(df_gastos$gastos_mes_hogar),digits=1),"%")), stat = "count", vjust = 0.5,hjust = -0.4, colour = "black",position =  position_dodge(.9), size=2.7)+  
   labs(x="Gastos mensuales del hogar", y="Número de hogares")+
-  scale_y_continuous(limits = c(0,3000))+
-  coord_flip()
+  scale_y_continuous(limits = c(0,2100))+
+  coord_flip()+
+  scale_fill_manual(values=c("#005117", "#8CBD0E", "#5ABCB9"), 
+                                     name="Tramo")+
+  theme(panel.background = element_rect(fill = "gray97",
+                                        colour = "gray97",
+                                        size = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "white"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "white"))
+
+createBarPlot <- function( df_data, var_name)
+{
+  library(dplyr)
+  library(ggplot2)
+  plot <- df_data %>% 
+    as_tibble() %>% 
+    filter_(!is.na(df_data[var_name])) %>% 
+    ggplot(aes_(as.name(var_name), fill=as.name("tramo")))+
+    geom_bar(col = "#005117", position = "dodge")+
+    geom_text( aes(label = paste0(round(..count..*100/length(as.name(var_name)),digits=1),"%")), stat = "count", vjust = 0.5,hjust = -0.4, colour = "black",position =  position_dodge(.9), size=2.7)+  
+    labs(x="Gastos mensuales del hogar", y="Número de hogares")+
+    scale_y_continuous(limits = c(0,2100))+
+    coord_flip()+
+    scale_fill_manual(values=c("#005117", "#8CBD0E", "#5ABCB9"), 
+                      name="Tramo")+
+    theme(panel.background = element_rect(fill = "gray97",
+                                          colour = "gray97",
+                                          size = 0.5, linetype = "solid"),
+          panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                          colour = "white"), 
+          panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                          colour = "white"))
+  return(plot)
+}
+
+createBarPlot(df_gastos, "gastos_mes_hogar")
+  
+Cstack_info()
+
+create_barplot_tramo <- function(df_datos, var_plot, var_cat="tramo", xlab, ylab) {
+  df_datos %>% 
+    as_tibble() %>% 
+    filter(!is.na(!!sym(var_plot))) %>% 
+    ggplot(aes(x=!!sym(var_plot), fill=!!sym(var_cat)))+
+      geom_bar(col = "#005117", position = "dodge")+
+      geom_text(aes(label = paste0(round(..count..*100/length(df_datos[[var_plot]]),digits=1),"%")), stat = "count", vjust = 0.5,hjust = -0.4, colour = "black",position =  position_dodge(.9), size=2.7)+  
+      labs(x=xlab, y=ylab)+
+      scale_y_continuous(limits = c(0,2100))+
+      coord_flip()+
+      scale_fill_manual(values=c("#005117", "#8CBD0E", "#5ABCB9"), 
+                      name="Tramo")+
+      theme(panel.background = element_rect(fill = "gray97",
+                                          colour = "gray97",
+                                          size = 0.5, linetype = "solid"),
+          panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                          colour = "white"), 
+          panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                          colour = "white"))
+}
+
+create_barplot_tramo(df_gastos, "gastos_mes_hogar", xlab = "Gastos mensuales del hogar", ylab = "Número de hogares")
+
+
+
+# Perdidas ----------------------------------------------------------------
+
+  
+df_perdidas <- df_hogares %>% select(
+  c(
+    CONSECUTIVO:NOMBRES, 
+    starts_with(c("P06","P07"))
+  )
+)
+
+df_perdidas %>% head() %>% View()
+
+
+# Cuotas creditos de actividades productivas ------------------------------
+
+
+df_cuotas <- df_hogares %>% select(
+  c(
+    CONSECUTIVO:NOMBRES, 
+    starts_with(c("P55"))
+  )
+)
+
+df_cuotas %>% head() %>% View()
+
+df_cuotas %>% 
+  mutate(P55 = factor(P55, labels=c("Si",'No'))) %>% 
+  ggplot(aes(P55))+
+    geom_bar(col = "#005117")
+
+table(df_cuotas$P55) %>% prop.table()
+
+## Interpretación: Aproximadamente el 82% de los hogares encuestados no pueden acceder a créditos.
+
+
