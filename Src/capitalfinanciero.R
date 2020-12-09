@@ -276,3 +276,9 @@ df_cuotas %>%
 create_barplot_binaries <- function(df_datos, var_plot, var_cat, var_cat_name, xlab, ylab) {
     
 }
+
+
+# Otros tipos de credito --------------------------------------------------
+
+df_hogares %>% 
+  select(starts_with("P550101E") | starts_with("P550101F")) 
