@@ -21,6 +21,7 @@ library("RColorBrewer")
 setwd("~/analisis/Src")
 
 source("preprocesamiento.R", encoding = "UTF-8")
+source("graficos.R", encoding = "UTF-8")
 
 # df_hogares %>% View()
 
@@ -280,5 +281,104 @@ create_barplot_binaries <- function(df_datos, var_plot, var_cat, var_cat_name, x
 
 # Otros tipos de credito --------------------------------------------------
 
-df_hogares %>% 
+df_otros_creditos <- df_hogares %>% 
   select(starts_with("P550101E") | starts_with("P550101F")) 
+
+wordcloud_graph(df_otros_creditos$P550101E...749)
+
+## Los otros tipos de crédito usados por 25 hogares se refieren al Banco Agrario, 
+## Cooperativas, fundaciones, cajas de compensación, microempresas, empresas 
+## familiares, tarjetas y Bancamía 
+
+
+# Actividades para las que se usa dando el crédito ------------------------
+
+df_actividades_credito <- df_hogares %>% 
+  select(starts_with("P5502")) 
+
+df_actividades_credito %>% 
+  select(P5502A:P5502F) %>% 
+  `colnames<-`(c("Preparar terreno\nde siembra", "Cosechas", "Beneficio\n(alistamiento de productos)", "Transporte", "Almacenamiento (acopio)", "Inversiones en infraestructura")) %>% 
+  mutate_all(as.integer) %>% 
+  summarise_all(sum, na.rm = TRUE) %>% 
+  pivot_longer(
+    cols = everything(),
+    names_to = 'proceso',
+    names_prefix = "proc",
+    values_to = "num_creditos",
+    values_drop_na = TRUE
+  ) %>% 
+  mutate(
+    porcentaje=num_creditos/table(df_cuotas$P5501)[[1]]
+  ) %>% 
+  ggplot(aes(x=reorder(proceso, -porcentaje), y=porcentaje))+
+  geom_bar( stat = "identity", position = "fill", fill = "#8CBD0E")+
+  geom_bar( stat = "identity", fill='#005117')+
+  geom_text(aes(label = round(porcentaje,2)), stat = "identity", vjust = 0.5,hjust = 1.3, colour = "white",position =  position_dodge(.9), size=2.7)+  
+  labs(x='Proceso', y='Porcentaje')+
+  scale_y_continuous(labels = scales::percent_format())+
+  coord_flip()
+
+## Aproximadamente el 40% de los créditos son usados para preparar el terreno de siembra,
+## 36% se destina a actividades y procesos relacionados con cosecha
+
+wordcloud_graph(df_actividades_credito$P5502OTHER)
+
+## Otros usos que se dan a los creditos son hacer inversiones, compra de animales, herramientas y materias primas.
+
+
+# Veces al año que se solicita crédito ------------------------------------
+
+df_frec_credito <- df_hogares %>% select(P5503)
+
+df_frec_credito$P5503 <- transformacion_faltantes(df_frec_credito$P5503)
+
+
+plt1 <- df_frec_credito %>% select(P5503) %>%
+  ggplot(aes(x="", y = P5503)) +
+  geom_boxplot(col = "#005117", fill = "#8CBD0E") + 
+  coord_flip() +
+  theme_classic() +
+  xlab("") +
+  scale_y_continuous(labels = scales::comma)+
+  theme(axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())
+
+plt2 <- ggplot(df_frec_credito, aes(as.numeric(P5503)))+
+  geom_histogram(col = "#005117", fill = "#8CBD0E")+
+  labs(x="Cantidad (millones de pesos)", y="Frecuencia")+
+  scale_x_continuous(labels = scales::comma)+
+  theme_classic()
+
+egg::ggarrange(plt2, plt1, heights = 2:1)
+
+
+df_frec_credito %>%
+  ggplot(aes(P5503))+
+    geom_bar()
+
+table(df_frec_credito$P5503) %>% prop.table()
+
+df_frec_credito %>% filter(P5503 != 0) %>%  table() %>% prop.table()
+
+## Aproximadamente el 88% de los hogares encuestados no solicita créditos en el año.
+## Del 12% restante, el 78% pide crédito una vez al año, entre dos y tres veces al 
+## año el 19%, y el 3% restante solicita créditos más de tres veces en el año 
+
+
+# Logra cubrir los gastos del crédito -------------------------------------
+
+table(df_hogares$P550301) %>% prop.table()
+
+## Del total de personas que solicita un crédito, aproximadamente el 77% reporta lograr
+## cubrir los gastos del crédito con su producción, mientras que el 23% restante no
+## lo logra.
+
+
+# Cómo se las arreglan para cubrir los créditos ---------------------------
+
+wordcloud_graph(df_hogares$P550301A)
+
+## Entre las formas empleadas por los hogares para cubrir los créditos, destacan
+## los pagos atrasados, refinanciaientos, otrs préstamos, ventas familiares y datacrédito
+

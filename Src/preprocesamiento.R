@@ -1,7 +1,7 @@
 library(dplyr)
 library(readxl)
 
-setwd("C:/Users/diant/Documents/deproyectos-Cauca/Bases/Análisis/Src")
+setwd("~/analisis/Src")
 
 # Funciones  --------------------------------------------------------------
 
