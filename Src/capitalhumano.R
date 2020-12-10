@@ -154,7 +154,7 @@ df_hogares %>%
 
 table(df_hogares$P18) %>% prop.table()
 
-## Del total de hogares, 32.4% de ellos afirman que la totalidad de personas que componen
+## Del total de hogares, 32.4% de ellos afirman que la totalidad de personas mayores de 12 años que componen
 ## el hogar participan en las actividades económicas que realiza el hogar para adquirir
 ## sus medios de vida. El restante 67.6% de los hogares emplea únicamente a algunos de
 ## sus miembros para el desarrollo de las actividades.
@@ -286,5 +286,59 @@ df_hogares %>%
 ## casi el 20% es retribuído con dinero por hacer esas actividades, el 7% de personas es retribuído con
 ## reducción de gastos de alimentación, y un 6% se retribuye con productos
 
+df_hogares$P1802OTHER %>% wordcloud_graph()
 
+## Las actividades que indican en opción Otra, son ninguna, sustento, hogar, responsabilidad, producción, remuneración
+
+df_hogares$P1802E %>% table()
   
+
+# Menores de 12 años que contribuyen en el hogar --------------------------
+
+table(df_hogares$P19) %>% prop.table()
+
+## 92.2% de los hogares encuestados no emplean a ningún miembro de la familia menor de 12
+## años en labores de adquisición de medios de vida, mientras que 1.5% ocupa a algunos 
+## menores de 12 años, y 6.3% ocupa a todos los miembros menores de 12 años en las labores
+## de producción
+
+table(df_hogares$P19B) ## No hay datos
+
+df_otras_actividades_menores <- df_hogares %>% 
+  select(c(
+    CONSECUTIVO:A00,  
+    starts_with(c("P1901","P191"))
+  )) %>% 
+  pivot_longer(
+    cols = starts_with(c("P1901","P191")),
+    names_to = "num_actividad", 
+    values_to = "actividad"
+  ) %>% 
+  filter(!is.na(actividad)) 
+
+df_otras_actividades_menores$actividad %>% wordcloud_graph()
+
+## Entre las otras actividades productivas se dedican por fuera de la parcela
+## o terreno familiar los menores de 12 años, se pueden encontrar labores como la venta
+## labores del hogar y oficios, preparación de alimentos, estudiar, seimbra y cultivo, entre otras.
+
+
+df_hogares %>% 
+  select(c("P1902A","P1902B","P1902C")) %>% 
+  `colnames<-`(c("Dinero", "Productos", "Disminución\nen gastos")) %>% 
+  mutate_all(as.integer) %>% 
+  summarise_all(sum, na.rm = TRUE) 
+
+## De los hogares encuestados, en 23 se retribuye con dinero, en 11 con productos, y en
+## 11 con disminución de gastos
+
+
+df_hogares$P1902OTHER %>% table() # No hay datos
+
+## Las actividades que indican en opción Otra, son ninguna, sustento, hogar, responsabilidad, producción, remuneración
+
+df_hogares$P1802E %>% table() # Datos raros
+
+
+
+
